@@ -1,0 +1,95 @@
+DOBRETE VLAD-GABRIEL
+323CA
+
+Pentru a putea incepe implementarea temei, m-am folosit de laboratorul de HTTP.
+Din acesta am preluat ideile pentru formularea mesajelor de GET, POST si
+DELETE. Am folosit si biblioteca parson pentru parsare deoarece cred ca este
+usor de folosit si intuitiva. Readme-ul oferit in aceasta biblioteca ofera
+fix comenzile pe care trebuie sa le implementam pentru a crea un obiect json
+(serialization). Pe partea de coding style am ales sa impun limita de 100
+de caractere deoarece comenzile in sine erau destul de lungi(cele de la parson
+si cele din laborator).
+
+========request.c========
+
+____compute_delete_request____
+Cu aceasta functie formez messajul de delete pe url-ul transmis ca parametru
+In aceasta adaug numele metodei(DELETE) si autorizatia necesara cu care
+dovedesc accesul in biblioteca
+
+____compute_get_request____
+Formez mesajul incepand cu numele metodei si url-ul. Adaug si hostul in headere
+Daca primim si cookie, formam header si cu el(ne ajuta sa dovedim 
+autentificarea). Daca primim si token, formam header pentru a putea dovedi
+accesul in biblioteca.
+
+____compute_post_request____
+Formez mesajul incepand cu numele metodei si url-ul. Adaug si hostul in headere
+precum si tipul continutului, lungimea lui si, ca la functia anterioara, cookie
+si token ul pentru aceleasi cerinte de dovedire a autentificarii sau a accesului.
+
+========client.c========
+
+In client implementez logica unui user. Acesta poate da comenzile register,
+login, enter_library, get_books, get_book, delete_book, logout si exit.
+
+Pentru register si login am procedat in acelasi fel. Am creat un json cu
+username si parola citite de la tastatura pe care il trimit prin functia
+compute_post_request. Dupa ce primesc string-ul final, il trimit la server.
+Dupa cum s-a discutat pe moodle, exista o problema cum ca serverul nu raspundea
+si se inchidea. Ca solutie, am verificat daca mai primesc ceva de la server si
+daca raspunsul este 0, mai efectuam inca o data pasii de trimitere.
+Aceasta solutie mi-a rezolvat problema. De asememena, am considerat ca pentru
+a putea da aceste 2 comenzi, trebuie sa nu fim deja logati cu alt cont.
+Protocolul pe care l-am implementat nu ia in considerare comenzile de login sau
+register daca suntem deja logati.
+Pentru enter_library, ca sa justific autentificarea din login, a trebuit sa retin
+cookie-ul (connect.sid ....). Am ales sa fac acest lucru pozitionandu-ma fix dupa
+finalul cookie-ului pentru a pune pe acea pozitie un terminator de sir. Astfel,
+cu strstr, daca ma pozitionam la inceput de cookie, ramaneam fix cu continutul pe
+care il voiam.
+Pentru enter_library, m-am folosit de compute_get_request. Daca se pierde
+conexiunea, actionez ca mai sus. Pentru a dovedi autentificarea, trimit functiei
+get, cookie-ul salvat mai devreme. De asemenea, pentru protocol, am considerat ca
+este nevoie sa fim conectati pentru a putea da aceasta comanda.
+Pentru functiile viitoare, token-ul obtinut a trebuit memorat. Am procedat la fel
+cu strstr si am alcatuit un string care are ca prefix cuvantul Bearer ca in enunt.
+In get_books formez un mesaj, de data asta cu headerul pentru tokenul salvat pe care
+il trimit la server. Din perspectiva protocolului, actionez la fel ca in cazurile
+precedente.
+Get_book a necesitat o  verificare in plus pentru id-ul cartii introdus. Trebuia
+ca acesta sa fie un integer pozitiv, astfel am creat functia isNumber care
+returneaza 0 daca stringul contine o litera si 1 daca este un numar. La fel verific
+ca numarul sa nu fie negativ. Pentru protocol, pun clientul sa bage alta valoare
+la id pana baga una buna. Dupa, concatenez la url acest id pentru a trimite
+serverului ce carte vreau sa vad mai bine. Protocolul de retrimitere a mesajului
+in cazul in care nu primim ack de la server, este la fel ca mai sus.
+In add_book creez o carte sub forma de json si am grija ca page_count sa fie
+integer pozitiv.
+Pentru logout, trimit un mesaj de tip get in care am si dovada de autentificare
+(cookie-ul). Resetez cookie si token pentru a putea fi folosite de viitorul
+utilizator.
+La delete_book, construiesc un url valid pe care il trimit la functia
+get_delete_request. Restul protocolului este la fel ca mai sus.
+Daca primesc comanda exit, client.c se inchide deoarece ies din while si
+inchid conexiunea socketului.
+
+Feedback: Tema super tare. Conceptul super bine explicat la laborator, fapt
+care a usurat rezolvarea. Singurul impediment pe langa mesajele trimise prost sau
+inchiderea de conexiune de la server, a fost reprezentat de intelegerea bibliotecii
+parson. Dupa putin research, am vazut ca nu trebuie decat sa creez o valoare json
+cu campurile dorite de noi. NICE JOB!
+░░░░░░░░░░░░▄▄░░░░░░░░░
+░░░░░░░░░░░█░░█░░░░░░░░
+░░░░░░░░░░░█░░█░░░░░░░░
+░░░░░░░░░░█░░░█░░░░░░░░
+░░░░░░░░░█░░░░█░░░░░░░░
+███████▄▄█░░░░░██████▄░░
+▓▓▓▓▓▓█░░░░░░░░░░░░░░█░
+▓▓▓▓▓▓█░░░░░░░░░░░░░░█░
+▓▓▓▓▓▓█░░░░░░░░░░░░░░█░
+▓▓▓▓▓▓█░░░░░░░░░░░░░░█░
+▓▓▓▓▓▓█░░░░░░░░░░░░░░█░
+▓▓▓▓▓▓█████░░░░░░░░░█░░
+██████▀░░░░▀▀██████▀░░░░
+
